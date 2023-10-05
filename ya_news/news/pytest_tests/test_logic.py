@@ -2,10 +2,9 @@ from http import HTTPStatus
 
 import pytest
 from django.urls import reverse
-from pytest_django.asserts import assertFormError, assertRedirects
-
 from news.forms import WARNING
 from news.models import Comment
+from pytest_django.asserts import assertFormError, assertRedirects
 
 
 def test_user_can_create_comment(admin_client, form_data, news_detail_url):
