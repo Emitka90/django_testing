@@ -60,10 +60,10 @@ class TestDetailPage(TestCase):
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор')
         cls.notes = Note.objects.create(
-                title='Заметка',
-                text='Просто текст.',
-                author=cls.author,
-                slug='tester',
+            title='Заметка',
+            text='Просто текст.',
+            author=cls.author,
+            slug='tester',
         )
         cls.add_url = reverse('notes:add')
         cls.edit_url = reverse('notes:edit', args=(cls.notes.slug,))
