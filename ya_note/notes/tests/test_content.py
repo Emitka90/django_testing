@@ -1,13 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+
 from notes.models import Note
+
 
 User = get_user_model()
 
 
 class TestContent(TestCase):
-    LIST_URL = reverse('notes:list')
+    NOTES_URL = reverse('notes:list')
 
     @classmethod
     def setUpTestData(cls):
@@ -23,11 +25,12 @@ class TestContent(TestCase):
             for index in range(1, 11)
         ]
         Note.objects.bulk_create(all_notes)
+        cls.note_obj = Note.objects.get(pk=1)
 
     def test_notes_order(self):
         ''' Тестируем сортировку заметок '''
         self.client.force_login(self.author)
-        response = self.client.get(self.LIST_URL)
+        response = self.client.get(self.NOTES_URL)
         notes_list = response.context['object_list']
         all_id = [note.pk for note in notes_list]
         sorted_id = sorted(all_id)
@@ -39,9 +42,9 @@ class TestContent(TestCase):
         передаются заметки пользователя
         '''
         self.client.force_login(self.author)
-        response = self.client.get(self.LIST_URL)
+        response = self.client.get(self.NOTES_URL)
         object_list = response.context['object_list']
-        self.assertIn(Note.objects.get(pk=1), object_list)
+        self.assertIn(self.note_obj, object_list)
 
     def test_note_not_in_list_for_another_user(self):
         '''
@@ -49,9 +52,9 @@ class TestContent(TestCase):
         не попадают заметки другого пользователя
         '''
         self.client.force_login(self.reader)
-        response = self.client.get(self.LIST_URL)
+        response = self.client.get(self.NOTES_URL)
         object_list = response.context['object_list']
-        self.assertNotIn(Note.objects.get(pk=1), object_list)
+        self.assertNotIn(self.note_obj, object_list)
 
 
 class TestDetailPage(TestCase):

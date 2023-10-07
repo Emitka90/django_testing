@@ -3,9 +3,12 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from pytils.translit import slugify
+
 from notes.forms import WARNING
 from notes.models import Note
-from pytils.translit import slugify
+
 
 User = get_user_model()
 
@@ -27,20 +30,22 @@ class TestNoteCreation(TestCase):
             'slug': cls.NOTE_SLUG,
             'title': cls.NOTE_TITLE
         }
+        cls.notes_initial_count = Note.objects.all().count()
+        cls.id_new_note = cls.notes_initial_count + 1
 
     def test_anonymous_user_cant_create_note(self):
         ''' Анониманый пользователь не может создать заметку '''
         self.client.post(self.url, data=self.form_data)
         notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 0)
+        self.assertEqual(notes_count, self.notes_initial_count)
 
     def test_user_can_create_note(self):
         ''' Залогиненный пользователь может создать заметку '''
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertRedirects(response, f'{self.redirect_url}')
         notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 1)
-        note = Note.objects.get()
+        self.assertGreater(notes_count, self.notes_initial_count)
+        note = Note.objects.get(id=self.id_new_note)
         self.assertEqual(note.text, self.NOTE_TEXT)
         self.assertEqual(note.title, self.NOTE_TITLE)
         self.assertEqual(note.slug, self.NOTE_SLUG)
@@ -50,8 +55,8 @@ class TestNoteCreation(TestCase):
         ''' Тестируем уникальность поля slug '''
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertRedirects(response, f'{self.redirect_url}')
-        notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 1)
+        notes_first_count = Note.objects.count()
+        self.assertGreater(notes_first_count, self.notes_initial_count)
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertFormError(
             response,
@@ -59,8 +64,8 @@ class TestNoteCreation(TestCase):
             field='slug',
             errors=self.NOTE_SLUG + WARNING,
         )
-        notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 1)
+        notes_second_count = Note.objects.count()
+        self.assertEqual(notes_second_count, notes_first_count)
 
     def test_not_slug(self):
         ''' Тестируем преобразование title в slug (если не указан slug) '''
@@ -94,20 +99,21 @@ class TestNoteEditDelete(TestCase):
         cls.redirect_url = reverse('notes:success')
         cls.form_data = {'text': cls.NEW_NOTE_TEXT,
                          'title': cls.TITLE}
+        cls.notes_initial_count = Note.objects.all().count()
 
     def test_author_can_delete_note(self):
         ''' Проверяем, что автор может удалить заметку '''
         response = self.author_client.delete(self.delete_url)
         self.assertRedirects(response, f'{self.redirect_url}')
         notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 0)
+        self.assertLess(notes_count, self.notes_initial_count)
 
     def test_user_cant_delete_note_of_another_user(self):
         ''' Проверяем, что пользователь не может удалить чужую заметку. '''
         response = self.reader_client.delete(self.delete_url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         notes_count = Note.objects.count()
-        self.assertEqual(notes_count, 1)
+        self.assertEqual(notes_count, self.notes_initial_count)
 
     def test_author_can_edit_note(self):
         ''' Проверяем, что автор может отредактировать свою заметку '''

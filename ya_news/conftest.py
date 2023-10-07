@@ -24,11 +24,10 @@ def author_client(author, client):
 
 @pytest.fixture
 def news():
-    news = News.objects.create(
+    return News.objects.create(
         title='Заголовок',
         text='Текст новости',
     )
-    return news
 
 
 @pytest.fixture
@@ -46,12 +45,11 @@ def news_more():
 
 @pytest.fixture
 def comment(news, author):
-    comment = Comment.objects.create(
+    return Comment.objects.create(
         text='Текст новости',
         news=news,
         author=author
     )
-    return comment
 
 
 @pytest.fixture
@@ -93,3 +91,8 @@ def bad_words_data():
 @pytest.fixture
 def news_detail_url(news):
     return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def comment_initial_count():
+    return Comment.objects.all().count()
