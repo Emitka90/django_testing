@@ -45,10 +45,10 @@ class TestNoteCreation(TestCase):
         self.assertRedirects(response, f'{self.redirect_url}')
         notes_count = Note.objects.count()
         self.assertGreater(notes_count, self.notes_initial_count)
-        note = Note.objects.get(id=self.id_new_note)
+        note = Note.objects.get(slug=self.NOTE_SLUG)
+        self.assertEqual(note.pk, self.id_new_note)
         self.assertEqual(note.text, self.NOTE_TEXT)
         self.assertEqual(note.title, self.NOTE_TITLE)
-        self.assertEqual(note.slug, self.NOTE_SLUG)
         self.assertEqual(note.author, self.user)
 
     def test_unique_slug(self):
